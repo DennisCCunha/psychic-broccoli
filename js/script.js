@@ -1,6 +1,6 @@
 
-import DiceRollerWrapper from '/psychic-broccoli/app/js/dice-roller.js';
-import { TurnController, Player } from '/psychic-broccoli/app/turn-control/turnController.js';
+import DiceRollerWrapper from '/js/dice-roller.js';
+import { TurnController, Player } from '/turn-control/turnController.js';
 
 function main() {
 document.addEventListener('DOMContentLoaded', async () => { // Your code runs safely here
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => { // Your code runs sa
 }
 
 async function loadTurnController(contentContainer) {
-      const response = await fetch('/psychic-broccoli/app/turn-control/turnController.html');
+      const response = await fetch('/turn-control/turnController.html');
       const html = await response.text();
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = html;
