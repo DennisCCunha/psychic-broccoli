@@ -21,6 +21,18 @@
         </header>
         <div id="diceRollerContainer" class="dice-box">
         </div>
+
+        <div id="connectionPanel" class="connection-panel">
+            <label for="connectionCodeInput">Shared code</label>
+            <input id="connectionCodeInput" type="text" value="psychic-b" maxlength="24" placeholder="Type a shared room code">
+            <div class="connection-actions">
+                <button id="createConnectionBtn" type="button">Create room</button>
+                <button id="joinConnectionBtn" type="button">Join room</button>
+                <button id="sendTestMessageBtn" type="button">Send test</button>
+            </div>
+            <p id="connectionStatus">Ready for a shared WebRTC room.</p>
+        </div>
+
         <section id="contentContainer">
             
         </section>
