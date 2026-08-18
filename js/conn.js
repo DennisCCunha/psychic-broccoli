@@ -7,6 +7,7 @@ const DEFAULT_ICE_SERVERS = [
   { urls: 'stun:stun1.l.google.com:19302' }
 ];
 
+
 function createPeerId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -26,11 +27,6 @@ function parseSignalPayload(value) {
     return value;
   }
 }
-
-function createConnectionKey(params) {
-    return bcrypt.
-}
-
 
 export function createConnectionAPI({
   roomCode,
