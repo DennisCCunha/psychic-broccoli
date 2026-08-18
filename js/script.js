@@ -2,6 +2,8 @@
 import DiceRollerWrapper from '/js/dice-roller.js';
 import { TurnController, Player } from '/turn-control/turnController.js';
 import { createConnectionAPI } from '/js/conn.js';
+import { VoiceChat } from '/js/voice-chat.js';
+import { TextChat } from '/js/text-chat.js';
 
 function main() {
   document.addEventListener('DOMContentLoaded', async () => {
@@ -11,19 +13,45 @@ function main() {
     const turnController = await loadTurnController(contentContainer);
 
     const connectionCodeInput = document.getElementById('connectionCodeInput');
+    const identityLabelInput = document.getElementById('identityLabelInput');
     const createConnectionButton = document.getElementById('createConnectionBtn');
     const joinConnectionButton = document.getElementById('joinConnectionBtn');
     const sendTestMessageButton = document.getElementById('sendTestMessageBtn');
     const connectionStatus = document.getElementById('connectionStatus');
+    const peerList = document.getElementById('peerList');
+    const voiceChatPanel = document.getElementById('voiceChatPanel');
+    const textChatPanel = document.getElementById('textChatPanel');
 
     let activeConnection = null;
+    let voiceChat = null;
+    let textChat = null;
 
     const setConnectionStatus = (status) => {
       connectionStatus.textContent = status;
     };
 
+    const renderPeers = (peers = []) => {
+      peerList.replaceChildren();
+
+      for (const peer of peers.filter((item) => item.connected)) {
+        const listItem = document.createElement('li');
+        listItem.textContent = `${peer.label}${peer.peerId === activeConnection?.state.peerId ? ' (you)' : ''}`;
+        peerList.appendChild(listItem);
+      }
+
+      if (!peerList.children.length) {
+        const emptyItem = document.createElement('li');
+        emptyItem.textContent = 'No connected peers yet.';
+        peerList.appendChild(emptyItem);
+      }
+    };
+
     const ensureConnection = (role = 'host') => {
       const roomCode = connectionCodeInput.value.trim() || 'psychic-b';
+      const identityLabel = identityLabelInput.value.trim() || 'Player';
+
+      if (voiceChat) { voiceChat.stop(); voiceChat.unmount(); }
+      if (textChat) { textChat.unmount(); }
 
       if (activeConnection) {
         activeConnection.closeConnection();
@@ -32,10 +60,11 @@ function main() {
       activeConnection = createConnectionAPI({
         roomCode,
         role,
-        userName: 'Player 1',
+        identityLabel: identityLabelInput.value.trim() || 'Player',
         onStateChange: (state) => {
           setConnectionStatus(`Code ${state.sharedCode} • ${state.connectionState}`);
         },
+        onPeersChange: renderPeers,
         onPeerConnected: () => {
           setConnectionStatus(`Connected in room ${roomCode}`);
         },
@@ -48,6 +77,12 @@ function main() {
           console.error(error);
         }
       });
+
+      textChat = new TextChat(activeConnection, { selfLabel: identityLabel });
+      textChat.mount(textChatPanel);
+
+      voiceChat = new VoiceChat(activeConnection);
+      voiceChat.mount(voiceChatPanel);
 
       activeConnection.connect();
       return activeConnection;
@@ -79,6 +114,7 @@ function main() {
     });
 
     setConnectionStatus('Ready for a shared WebRTC room.');
+    renderPeers();
   });
 }
 

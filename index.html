@@ -25,13 +25,22 @@
         <div id="connectionPanel" class="connection-panel">
             <label for="connectionCodeInput">Shared code</label>
             <input id="connectionCodeInput" type="text" value="psychic-b" maxlength="24" placeholder="Type a shared room code">
+            <label for="identityLabelInput">Your identity</label>
+            <input id="identityLabelInput" type="text" value="Player 1" maxlength="32" placeholder="Name shown to peers">
             <div class="connection-actions">
                 <button id="createConnectionBtn" type="button">Create room</button>
                 <button id="joinConnectionBtn" type="button">Join room</button>
                 <button id="sendTestMessageBtn" type="button">Send test</button>
             </div>
             <p id="connectionStatus">Ready for a shared WebRTC room.</p>
+            <div class="peer-roster" aria-live="polite">
+                <strong>Connected peers</strong>
+                <ul id="peerList"></ul>
+            </div>
         </div>
+
+        <div id="voiceChatPanel"></div>
+        <div id="textChatPanel"></div>
 
         <section id="contentContainer">
             
@@ -41,5 +50,5 @@
             <p>&copy; 2024 Psychic Broccoli. Todos os direitos reservados.</p>
         </footer>
     </body>
-    <script type="module" src="/js/script.js"></script>
+    <script type="module" src="/js/script.js?v=2"></script>
 </html>
