@@ -11,15 +11,33 @@ function main() {
     const turnController = await loadTurnController(contentContainer);
 
     const connectionCodeInput = document.getElementById('connectionCodeInput');
+    const identityLabelInput = document.getElementById('identityLabelInput');
     const createConnectionButton = document.getElementById('createConnectionBtn');
     const joinConnectionButton = document.getElementById('joinConnectionBtn');
     const sendTestMessageButton = document.getElementById('sendTestMessageBtn');
     const connectionStatus = document.getElementById('connectionStatus');
+    const peerList = document.getElementById('peerList');
 
     let activeConnection = null;
 
     const setConnectionStatus = (status) => {
       connectionStatus.textContent = status;
+    };
+
+    const renderPeers = (peers = []) => {
+      peerList.replaceChildren();
+
+      for (const peer of peers.filter((item) => item.connected)) {
+        const listItem = document.createElement('li');
+        listItem.textContent = `${peer.label}${peer.peerId === activeConnection?.state.peerId ? ' (you)' : ''}`;
+        peerList.appendChild(listItem);
+      }
+
+      if (!peerList.children.length) {
+        const emptyItem = document.createElement('li');
+        emptyItem.textContent = 'No connected peers yet.';
+        peerList.appendChild(emptyItem);
+      }
     };
 
     const ensureConnection = (role = 'host') => {
@@ -32,10 +50,11 @@ function main() {
       activeConnection = createConnectionAPI({
         roomCode,
         role,
-        userName: 'Player 1',
+        identityLabel: identityLabelInput.value.trim() || 'Player',
         onStateChange: (state) => {
           setConnectionStatus(`Code ${state.sharedCode} • ${state.connectionState}`);
         },
+        onPeersChange: renderPeers,
         onPeerConnected: () => {
           setConnectionStatus(`Connected in room ${roomCode}`);
         },
@@ -79,6 +98,7 @@ function main() {
     });
 
     setConnectionStatus('Ready for a shared WebRTC room.');
+    renderPeers();
   });
 }
 
