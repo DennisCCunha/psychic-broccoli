@@ -85,6 +85,7 @@ export class PeerConnectionManager {
     if (!value) {
       return null;
     }
+  }
 
     try {
       return JSON.parse(value);
