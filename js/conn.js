@@ -17,7 +17,8 @@ export class PeerConnectionManager {
     onPeersChange = () => {},
     onMessage = () => {},
     onTrack = () => {},
-    onError = () => {}
+    onError = () => {},
+    signalingTransportFactory = null
   } = {}) {
     if (!roomCode || !String(roomCode).trim()) {
       throw new Error('A shared room code is required to create a WebRTC connection.');
@@ -39,9 +40,13 @@ export class PeerConnectionManager {
     this.peers = new Map([[this.peerId, this.createPeer(this.peerId, this.identityLabel, true)]]);
     this.pendingMessages = [];
     this.signalChannelName = `psychic-b-${this.sharedCode}`;
-    this.signalChannel = typeof BroadcastChannel !== 'undefined'
-      ? new BroadcastChannel(this.signalChannelName)
-      : null;
+    if (signalingTransportFactory) {
+      this.signalChannel = signalingTransportFactory(this.signalChannelName, this.peerId);
+    } else {
+      this.signalChannel = typeof BroadcastChannel !== 'undefined'
+        ? new BroadcastChannel(this.signalChannelName)
+        : null;
+    }
     this.state = {
       role: this.role,
       sharedCode: this.sharedCode,
@@ -59,9 +64,10 @@ export class PeerConnectionManager {
 
     if (this.signalChannel) {
       this.signalChannel.onmessage = (event) => this.handleSignal(event.data);
+      this.signalChannel.listen?.();
     }
 
-    if (typeof window !== 'undefined' && 'addEventListener' in window) {
+    if (!signalingTransportFactory && typeof window !== 'undefined' && 'addEventListener' in window) {
       this.storageListener = (event) => {
         if (!event.key || !event.key.startsWith(this.signalChannelName) || !event.newValue) {
           return;
@@ -277,7 +283,7 @@ export class PeerConnectionManager {
   }
 
   handleData(peerId, event) {
-    const payload = typeof event.data === 'string' ? parseSignalPayload(event.data) : event.data;
+    const payload = typeof event.data === 'string' ? this.parseSignalPayload(event.data) : event.data;
 
     if (payload?.type === 'roster') {
       this.applyRoster(payload.peers);

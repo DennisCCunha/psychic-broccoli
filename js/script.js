@@ -4,6 +4,7 @@ import { TurnController, Player } from '/turn-control/turnController.js';
 import { createConnectionAPI } from '/js/conn.js';
 import { VoiceChat } from '/js/voice-chat.js';
 import { TextChat } from '/js/text-chat.js';
+import { GunSignalingChannel } from '/js/gun-signaling.js';
 
 function main() {
   document.addEventListener('DOMContentLoaded', async () => {
@@ -61,6 +62,8 @@ function main() {
         roomCode,
         role,
         identityLabel: identityLabelInput.value.trim() || 'Player',
+        signalingTransportFactory: (channelName, peerId) =>
+          new GunSignalingChannel(channelName, peerId),
         onStateChange: (state) => {
           setConnectionStatus(`Code ${state.sharedCode} • ${state.connectionState}`);
         },
