@@ -82,11 +82,7 @@ export class PeerConnectionManager {
   }
 
   parseSignalPayload(value) {
-    if (!value) {
-      return null;
-    }
-  }
-
+    if (!value) return null;
     try {
       return JSON.parse(value);
     } catch (error) {
