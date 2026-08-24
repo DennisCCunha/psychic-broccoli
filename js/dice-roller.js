@@ -5,7 +5,7 @@ import DiceBox from "https://cdn.jsdelivr.net/npm/@3d-dice/dice-box@1.1.4/dist/d
 import BoxControls from "https://esm.sh/@3d-dice/dice-ui@0.5.2/src/boxControls/boxControls.js";
 
 
-class DiceRollerWarper {
+class DiceRollerWrapper {
   constructor() {
     const diceBoxConfig = {
 
@@ -64,8 +64,26 @@ class DiceRollerWarper {
     results.avg = results.rolls.length ? results.sum / results.rolls.length : 0;
     return results;
   }
+}
 
+class DiceRollerWhisper {
+  constructor(RtcPeerConnection) {
+   
+  }
   
+}
+
+class RollerMessager {
+  constructor() {
+    this.type = "dice-roll";
+    this.id = "8f3a...";
+    this.notation = "2d6+3";
+    this.results = [4, 5];
+    this.modifier = 3;
+    this.total = 12;
+    this.timestamp = 1787400000000;
+  }
+
 
 
 }
@@ -86,4 +104,4 @@ class RollParser {
 
 
 
-export default DiceRollerWarper;
+export default DiceRollerWrapper;

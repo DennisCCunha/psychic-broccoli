@@ -1,0 +1,49 @@
+.turn-tracker{
+    clip-path: polygon(100% 0%, 100% 46%, 100% 100%, 19% 100%, 9% 57%, 0 0);
+    margin: 0 auto;
+    width: 100%;
+}
+
+.sequence{
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+.sequence-count {
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-radius: 50%;
+    padding: 0.25rem 0.5rem;
+}
+
+.sequence-track {
+
+
+
+}
+
+.sequence-element {
+    --size: 1;
+    width: calc(4rem * var(--size));
+    height: calc(4rem * var(--size));
+    clip-path: polygon(0 0, 100% 0, 100% 82%, 0 100%);
+}
+.sequence .player {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: #ccc;
+}
+
+.sequence-element:nth-child(1) {
+    --size: 1.2;
+}
+
+.sequence-element:nth-child(n + 5) {
+    --size: 0.8;
+}
+
+.sequence-element:nth-child(n + 9) {
+    display: none;
+}
