@@ -1,15 +1,13 @@
 export class VoiceChat {
-  constructor(peerManager, { onStateChange = () => {} } = {}) {
+  constructor(peerManager) {
     this.peerManager = peerManager;
-    this.onStateChange = onStateChange;
     this.localStream = null;
-    this.remoteAudios = new Map();
     this.muted = false;
     this.active = false;
-    this._container = null;
-    this._startBtn = null;
-    this._muteBtn = null;
-    this._audioContainer = null;
+    // peerId → { audio, stream, analyser, gainNode, context }
+    this.peers = new Map();
+    this.onStateChange = () => {};
+    this.onPeerActivity = () => {};
 
     peerManager.onTrack = (event, peerId) => this._handleRemoteTrack(event, peerId);
   }
@@ -19,8 +17,8 @@ export class VoiceChat {
     for (const track of this.localStream.getAudioTracks()) {
       this.peerManager.addLocalTrack(track, this.localStream);
     }
+    this._startLocalActivityDetection();
     this.active = true;
-    this._syncUI();
     this.onStateChange({ active: true, muted: this.muted });
   }
 
@@ -31,8 +29,12 @@ export class VoiceChat {
         track.enabled = !muted;
       }
     }
-    this._syncUI();
     this.onStateChange({ active: this.active, muted: this.muted });
+  }
+
+  setPeerVolume(peerId, volume) {
+    const peer = this.peers.get(peerId);
+    if (peer?.gainNode) peer.gainNode.gain.value = Math.max(0, Math.min(2, volume));
   }
 
   stop() {
@@ -43,86 +45,92 @@ export class VoiceChat {
       }
       this.localStream = null;
     }
-    for (const audio of this.remoteAudios.values()) {
-      audio.srcObject = null;
-      audio.remove();
+    if (this._localContext) {
+      this._localContext.close();
+      this._localContext = null;
     }
-    this.remoteAudios.clear();
+    for (const [peerId, peer] of this.peers) {
+      peer.audio.srcObject = null;
+      peer.audio.remove();
+      peer.context?.close();
+      this.peers.delete(peerId);
+    }
     this.active = false;
-    this._syncUI();
     this.onStateChange({ active: false, muted: this.muted });
   }
 
-  mount(container) {
-    this._container = container;
-    container.innerHTML = `
-      <div class="voice-chat-panel">
-        <strong class="voice-chat-title">Voice chat</strong>
-        <div class="voice-chat-actions">
-          <button type="button" class="voice-start-btn">Start voice</button>
-          <button type="button" class="voice-mute-btn" disabled>Mute</button>
-        </div>
-        <span class="voice-status">Inactive</span>
-      </div>
-    `;
-    this._startBtn = container.querySelector('.voice-start-btn');
-    this._muteBtn = container.querySelector('.voice-mute-btn');
-    this._statusEl = container.querySelector('.voice-status');
-
-    this._audioContainer = document.createElement('div');
-    this._audioContainer.hidden = true;
-    document.body.appendChild(this._audioContainer);
-
-    this._startBtn.addEventListener('click', async () => {
-      if (this.active) {
-        this.stop();
-      } else {
-        try {
-          await this.start();
-        } catch (err) {
-          if (this._statusEl) this._statusEl.textContent = 'Mic access denied.';
-        }
-      }
-    });
-
-    this._muteBtn.addEventListener('click', () => this.setMuted(!this.muted));
-    this._syncUI();
-  }
-
-  unmount() {
-    this.stop();
-    if (this._audioContainer) {
-      this._audioContainer.remove();
-      this._audioContainer = null;
-    }
-    if (this._container) {
-      this._container.innerHTML = '';
-      this._container = null;
-    }
-    this._startBtn = null;
-    this._muteBtn = null;
-    this._statusEl = null;
-  }
-
-  _syncUI() {
-    if (!this._startBtn) return;
-    this._startBtn.textContent = this.active ? 'Stop voice' : 'Start voice';
-    this._muteBtn.disabled = !this.active;
-    this._muteBtn.textContent = this.muted ? 'Unmute' : 'Mute';
-    if (this._statusEl) {
-      this._statusEl.textContent = !this.active ? 'Inactive' : (this.muted ? 'Muted' : 'Active');
-    }
+  // Returns a snapshot of peer speaking states for the UI to poll or receive via onPeerActivity
+  getPeerStates() {
+    return [...this.peers.entries()].map(([peerId, p]) => ({
+      peerId,
+      speaking: p.speaking ?? false
+    }));
   }
 
   _handleRemoteTrack(event, peerId) {
     if (!event.streams?.length) return;
-    let audio = this.remoteAudios.get(peerId);
-    if (!audio) {
-      audio = document.createElement('audio');
+    const stream = event.streams[0];
+
+    let peer = this.peers.get(peerId);
+    if (!peer) {
+      const audio = document.createElement('audio');
       audio.autoplay = true;
-      (this._audioContainer || document.body).appendChild(audio);
-      this.remoteAudios.set(peerId, audio);
+      audio.style.display = 'none';
+      document.body.appendChild(audio);
+      peer = { audio, stream: null, context: null, gainNode: null, analyser: null, speaking: false };
+      this.peers.set(peerId, peer);
     }
-    audio.srcObject = event.streams[0];
+
+    peer.audio.srcObject = stream;
+    peer.stream = stream;
+    this._startRemoteActivityDetection(peerId, peer, stream);
+  }
+
+  _startRemoteActivityDetection(peerId, peer, stream) {
+    try {
+      const ctx = new AudioContext();
+      const source = ctx.createMediaStreamSource(stream);
+      const gain = ctx.createGain();
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      source.connect(gain);
+      gain.connect(analyser);
+      gain.connect(ctx.destination);
+      peer.context = ctx;
+      peer.gainNode = gain;
+      peer.analyser = analyser;
+      this._pollActivity(peerId, peer);
+    } catch { /* AudioContext not supported — silent fallback */ }
+  }
+
+  _startLocalActivityDetection() {
+    try {
+      const ctx = new AudioContext();
+      const source = ctx.createMediaStreamSource(this.localStream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      source.connect(analyser);
+      this._localContext = ctx;
+      this._localAnalyser = analyser;
+      this._pollActivity('local', { analyser, speaking: false }, true);
+    } catch { /* silent fallback */ }
+  }
+
+  _pollActivity(peerId, peer, isLocal = false) {
+    const buf = new Uint8Array(peer.analyser.fftSize);
+    const tick = () => {
+      if (!peer.analyser) return;
+      peer.analyser.getByteTimeDomainData(buf);
+      let sum = 0;
+      for (const v of buf) sum += Math.abs(v - 128);
+      const speaking = (sum / buf.length) > 2;
+      if (speaking !== peer.speaking) {
+        peer.speaking = speaking;
+        this.onPeerActivity({ peerId: isLocal ? 'local' : peerId, speaking });
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }
 }
+

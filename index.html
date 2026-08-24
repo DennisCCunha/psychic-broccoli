@@ -6,11 +6,8 @@
         <title>Psychic Broccoli</title>
         <link rel="stylesheet" href="/css/styles.css">
         <link rel="icon" href="/assets/favicon.png" type="image/x-icon">
-        <!-- mqtt.js: used as WebRTC signaling transport over HiveMQ public broker -->
-        <script src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
     </head>
     <body>
-        
         <header>
             <nav>
                 <img src="/assets/logo.png" alt="Logo do Psychic Broccoli" class="logo">
@@ -19,37 +16,45 @@
                     <li><a href="#">Rolador de Dados</a></li>
                     <li><a href="#">Contato</a></li>
                 </ul>
+                <button id="navRoomCode" class="nav-room-code" type="button" title="Click to copy the shared room code"></button>
+                <button id="commsToggleBtn" class="comms-toggle-btn" type="button" aria-expanded="false" aria-controls="commsSidebar">Connect</button>
             </nav>
         </header>
-        <div id="diceRollerContainer" class="dice-box">
+
+        <!-- fixed overlay for dice animation -->
+        <div id="diceRollerContainer" class="dice-box"></div>
+
+        <div class="app-layout">
+            <main id="stage" class="stage">
+                
+                <div id="drawingBoardPanel" class="drawing-board-panel"></div>
+                <section id="contentContainer"></section>
+            </main>
+
+            <aside class="comms-sidebar comms-sidebar--collapsed" id="commsSidebar">
+                <div id="connectionPanel" class="connection-panel">
+                    <label for="connectionCodeInput">Shared code</label>
+                    <input id="connectionCodeInput" type="text" value="psychic-b" maxlength="24" placeholder="Type a shared room code">
+                    <label for="identityLabelInput">Your identity</label>
+                    <input id="identityLabelInput" type="text" value="Player 1" maxlength="32" placeholder="Name shown to peers">
+                    <div class="connection-actions">
+                        <button id="createConnectionBtn" type="button">Create room</button>
+                        <button id="joinConnectionBtn" type="button">Join room</button>
+                        <button id="sendTestMessageBtn" type="button">Send test</button>
+                    </div>
+                    <p id="connectionStatus">Ready for a shared WebRTC room.</p>
+                    <div class="peer-roster" aria-live="polite">
+                        <strong>Connected peers</strong>
+                        <ul id="peerList"></ul>
+                    </div>
+                </div>
+                <div id="voiceChatPanel"></div>
+                <div id="textChatPanel"></div>
+            </aside>
         </div>
 
-        <div id="connectionPanel" class="connection-panel">
-            <label for="connectionCodeInput">Shared code</label>
-            <input id="connectionCodeInput" type="text" value="psychic-b" maxlength="24" placeholder="Type a shared room code">
-            <label for="identityLabelInput">Your identity</label>
-            <input id="identityLabelInput" type="text" value="Player 1" maxlength="32" placeholder="Name shown to peers">
-            <div class="connection-actions">
-                <button id="createConnectionBtn" type="button">Create room</button>
-                <button id="joinConnectionBtn" type="button">Join room</button>
-                <button id="sendTestMessageBtn" type="button">Send test</button>
-            </div>
-            <p id="connectionStatus">Ready for a shared WebRTC room.</p>
-            <div class="peer-roster" aria-live="polite">
-                <strong>Connected peers</strong>
-                <ul id="peerList"></ul>
-            </div>
-        </div>
-
-        <div id="voiceChatPanel"></div>
-        <div id="textChatPanel"></div>
-
-        <section id="contentContainer">
-            
-        </section>
-        
         <footer>
-            <p>&copy; 2024 Psychic Broccoli. Todos os direitos reservados.</p>
+            <p><a href="https://brocolis.ninja">Brocolis.Ninja</a></p>
         </footer>
     </body>
     <script type="module" src="/js/script.js?v=2"></script>
