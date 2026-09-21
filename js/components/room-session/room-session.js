@@ -1,13 +1,11 @@
-import {
-  createConnectionAPI,
-  DrawingBoard,
-  MqttSignalingChannel,
-  TextChat,
-  VoiceChat
-} from '/js/components/webrtc/index.js';
+import { createConnectionAPI } from '/js/components/webrtc/index.js';
+import { VoiceChat } from '/js/components/webrtc/index.js';
 import { VoiceChatUI } from '/js/voice-chat-ui.js';
+import { TextChat } from '/js/components/webrtc/index.js';
 import { TextChatUI } from '/js/text-chat-ui.js';
+import { DrawingBoard } from '/js/components/webrtc/index.js';
 import { DrawingBoardUI } from '/js/drawing-ui.js';
+import { MqttSignalingChannel } from '/js/mqtt-signaling.js';
 
 export class RoomSession {
   constructor({ voiceChatPanel, textChatPanel, drawingBoardPanel, onStateChange, onPeersChange, onPeerConnected, onMessage, onError } = {}) {
@@ -83,3 +81,5 @@ export class RoomSession {
     this.connection = null;
   }
 }
+
+export default RoomSession;

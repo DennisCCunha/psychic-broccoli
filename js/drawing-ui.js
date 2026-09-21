@@ -25,10 +25,12 @@ export class DrawingBoardUI {
         <div class="drawing-toolbar">
           <input type="color" class="drawing-color" value="#1f2937" title="Color">
           <input type="range" class="drawing-size" min="1" max="24" value="4" title="Brush size">
-          <button type="button" class="drawing-tool-btn drawing-tool-btn--active" data-tool="pen">Pen</button>
-          <button type="button" class="drawing-tool-btn" data-tool="eraser">Eraser</button>
-          <button type="button" class="drawing-clear-btn">Clear</button>
-          ${this._board.isHost ? '<button type="button" class="drawing-lock-btn">Lock canvas</button>' : ''}
+
+          <button type="button" class="drawing-tool-btn drawing-tool-btn--active" data-tool="pen" aria-label="Pen"><i class="bi bi-pen"></i></button>
+          <button type="button" class="drawing-tool-btn" data-tool="eraser" aria-label="Eraser"><i class="bi bi-eraser"></i></button>
+          ${this._board.isHost ? '<button type="button" class="drawing-clear-btn" data-tool="clear" aria-label="Clear canvas"><i class="bi bi-trash2"></i></button>' : ''}
+
+          ${this._board.isHost ? '<button type="button" class="drawing-lock-btn" aria-label="Lock canvas"><i class="bi bi-lock"></i></button>' : ''}
           <span class="drawing-lock-banner" hidden>Host has locked the canvas.</span>
         </div>
         <canvas class="drawing-canvas"></canvas>
@@ -95,7 +97,6 @@ export class DrawingBoardUI {
   }
 
   _onClearClick() {
-    this._applyClear();
     this._board.sendClear();
   }
 
