@@ -13,6 +13,14 @@ turn-controller {
     display: block;
 }
 
+turn-controller.turn-controller--disabled {
+    opacity: 0.55;
+}
+
+turn-controller.turn-controller--disabled #turnControl {
+    pointer-events: none;
+}
+
 #turnControl {
     position: relative;
     box-sizing: border-box;

@@ -17,6 +17,7 @@ export class PsychicBroccoli {
   async onDomReady() {
     this.contentContainer = document.getElementById('contentContainer');
     this.turncontroller = document.querySelector('turn-controller')?.controller;
+    this.turnTrackerToggle = document.getElementById('turnTrackerToggle');
     this.diceRoller = await this.loadDiceRoller();
 
     this.connectionCodeInput = document.getElementById('connectionCodeInput');
@@ -39,16 +40,23 @@ export class PsychicBroccoli {
     this.connectionCodeInput.addEventListener('change', this.onRoomCodeChange.bind(this));
     this.navRoomCode.addEventListener('click', this.onNavRoomCodeClick.bind(this));
     this.commsToggleBtn.addEventListener('click', this.onCommsToggleClick.bind(this));
+    this.turnTrackerToggle?.addEventListener('click', this.onTurnTrackerToggleClick.bind(this));
     this.createConnectionButton.addEventListener('click', this.onCreateRoomClick.bind(this));
     this.joinConnectionButton.addEventListener('click', this.onJoinRoomClick.bind(this));
     this.sendTestMessageButton.addEventListener('click', this.onSendTestMessageClick.bind(this));
 
     this.setStatus('Ready for a shared WebRTC room.');
+    this.setTurnTrackerEnabled(false);
     this.renderPeers();
   }
 
-  initTurnTracker(players) {
-    this.turnTracker.turnTrackerRender();
+  setTurnTrackerEnabled(enabled) {
+    this.turncontroller?.setEnabled(enabled);
+    this.turnTrackerToggle?.setAttribute('aria-pressed', String(enabled));
+  }
+
+  onTurnTrackerToggleClick() {
+    this.setTurnTrackerEnabled(!this.turncontroller?.enabled);
   }
 
   onRoomCodeChange() {

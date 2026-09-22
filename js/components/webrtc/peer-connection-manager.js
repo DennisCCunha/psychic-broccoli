@@ -35,6 +35,9 @@ export class PeerConnectionManager {
     this.onError = onError;
     this.localTracks = [];
     this.connections = new Map();
+    // A autoridade fica vinculada ao peer autenticado pelo handshake, não ao
+    // campo `role`, que pode ser alterado pelo código executado no navegador.
+    this.authorityPeerId = role === 'host' ? this.peerId : null;
     this.peers = new Map([[this.peerId, this.createPeer(this.peerId, this.identityLabel, true)]]);
     this.pendingMessages = [];
     this.signalChannelName = `psychic-b-${this.sharedCode}`;
@@ -204,7 +207,13 @@ export class PeerConnectionManager {
     channel.onopen = () => {
       this.updatePeer(peerId, { connected: true, connectionState: 'connected' });
       this.updateState({ connectionState: 'connected', connected: this.hasConnectedPeer(), dataChannel: channel, peerConnection: connection.peerConnection, remotePeerId: peerId });
-      this.sendSignal('identity', { label: this.identityLabel }, peerId);
+      // A identidade segue pelo DataChannel já negociado. Assim, o receptor
+      // associa autoridade ao peer WebRTC real, e não a um `role` anunciado.
+      channel.send(JSON.stringify({
+        type: 'identity',
+        label: this.identityLabel,
+        role: this.role === 'host' ? 'host' : 'guest'
+      }));
       this.flushPendingMessages();
       this.sendRoster();
       this.onPeerConnected({ sharedCode: this.sharedCode, peerId, userName: this.peers.get(peerId)?.label });
@@ -229,8 +238,17 @@ export class PeerConnectionManager {
       this.sendRoster();
       return;
     }
+    // Comandos administrativos só podem vir do peer definido pelo handshake.
+    // Isso bloqueia a elevação local de `role` feita pelo console do navegador.
+    if (this.requiresAuthority(payload) && peerId !== this.authorityPeerId) return;
     if (this.role === 'host') this.broadcastData(payload, peerId);
     this.onMessage(payload, { sharedCode: this.sharedCode, peerId });
+  }
+
+  requiresAuthority(payload) {
+    if (!payload || typeof payload !== 'object') return false;
+    if (payload.type === 'music-sync') return true;
+    return payload.type === 'draw' && ['clear', 'lock'].includes(payload.op);
   }
 
   applyRoster(roster = []) {
@@ -279,6 +297,9 @@ export class PeerConnectionManager {
         return;
       }
       if (message.type === 'offer' && this.role !== 'host') {
+        // O peer que enviou a oferta é a autoridade desta conexão. Esse
+        // vínculo permanece mesmo se `this.role` for adulterado localmente.
+        if (!this.authorityPeerId) this.authorityPeerId = message.from;
         const peerConnection = this.createConnection(message.from, 'Host');
         await peerConnection.setRemoteDescription(new RTCSessionDescription(message.payload.offer));
         await this.flushPendingIceCandidates(message.from);

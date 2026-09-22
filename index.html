@@ -8,13 +8,14 @@
         <link rel="stylesheet" href="/turn-control/turnController.css">
         <link rel="stylesheet" href="/turn-control/custom.css">
         <link rel="icon" href="/assets/favicon.png" type="image/x-icon">
+       
     </head>
     <body>
         <header>
             <nav>
                 <img src="/assets/logo.png" alt="Logo do Psychic Broccoli" class="logo">
                 <div class="nav-controls">
-                    <button class="nav-turn-control" type="button">Controle de Turno</button>
+                    <button id="turnTrackerToggle" class="nav-turn-control" type="button" aria-pressed="false" aria-controls="turnControl">Controle de Turno</button>
                     <button class="nav-dice-roller" type="button">Rolador de Dados</button>
                 </div>
                 <div class="comm-controls">
@@ -41,8 +42,11 @@
 
             <aside class="comms-sidebar comms-sidebar--collapsed" id="commsSidebar">
                 <div id="connectionPanel" class="connection-panel">
-                    <label for="connectionCodeInput">Codigo da Sala</label>
-                    <input id="connectionCodeInput" type="text" value="psychic-b" maxlength="24" placeholder="Type a shared room code">
+                    <div>
+                        <label for="connectionCodeInput">Codigo da Sala</label>
+                        <input id="connectionCodeInput" type="text" value="psychic-b" maxlength="24" placeholder="Type a shared room code">
+                        <button id="copyConnectionCodeBtn" type="button" title="Refresh the room code" aria-label="Refresh the room code"><i class="bi bi-shuffle"></i></button>
+                    </div>
                     <label for="identityLabelInput">Seu Nome</label>
                     <input id="identityLabelInput" type="text" value="Player 1" maxlength="32" placeholder="Nome mostrado aos outros jogadores">
                     <div class="connection-actions">
@@ -63,6 +67,9 @@
 
         <footer>
             <p><a href="https://brocolis.ninja">Brocolis.Ninja</a></p>
+            <p><a href="https://github.com/brocolis-ninja/boardgame-app">GitHub Repository</a></p>
+            <p><a href="https://brocolis.ninja/boardgame-app/issues">Report an Issue</a></p>
+            <p>Use com moderação - Respeite as Leis locais</p>
         </footer>
     </body>
     <script type="module" src="/js/script.js?v=3"></script>

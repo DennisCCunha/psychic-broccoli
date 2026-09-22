@@ -3,7 +3,13 @@ Pequeno app para ajudar nas mesas de boardgames, com controle de rodadas, cronom
 
 ## Componentes WebRTC
 
-As implementações de conexão, sinalização MQTT, desenho, chat de texto e voz vivem em `js/components/webrtc/`. Consuma o barrel `js/components/webrtc/index.js` ou os módulos locais diretamente; `js/conn.js`, `js/drawing.js`, `js/text-chat.js`, `js/voice-chat.js` e `js/mqtt-signaling.js` permanecem apenas como adaptadores para consumidores legados. O `peer-event-listener.js` fornece a ponte entre eventos e callbacks antigos sem reintroduzir dependência dos módulos legados.
+As implementações de conexão, sinalização MQTT, desenho, chat de texto, voz e suas UIs vivem exclusivamente em `js/components/webrtc/`. Consuma o barrel `js/components/webrtc/index.js` ou os módulos locais diretamente. O `peer-event-listener.js` fornece a ponte entre eventos e callbacks antigos.
+
+### Autoridade da sala
+
+O `PeerConnectionManager` vincula a autoridade ao `peerId` que participa do handshake WebRTC: no host, ao próprio `peerId`; no convidado, ao peer que enviou a oferta. O campo `role` continua sendo usado para controlar o fluxo local, mas não é uma credencial e não deve ser usado para autorizar comandos remotos.
+
+Mensagens administrativas, como limpar ou bloquear o quadro e sincronizar música, são aceitas somente quando vêm do `authorityPeerId`. Essa validação ocorre antes do encaminhamento para os componentes, portanto alterar `role` ou `isHost` pelo console só modifica a própria aba e não concede autoridade sobre os demais peers.
 
 ### Música sincronizada
 

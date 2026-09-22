@@ -9,7 +9,6 @@ class DiceRollerWrapper {
       container: "#diceRollerContainer", 
       id: "diceCanvas",
       assetPath: "assets/",
-      // origin: "https://unpkg.com/@3d-dice/dice-box@1.1.4/dist/",
       origin: "https://cdn.jsdelivr.net/npm/@3d-dice/dice-box@1.1.4/dist/",
 
       offscreen: !0,

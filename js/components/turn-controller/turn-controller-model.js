@@ -30,6 +30,7 @@ export class TurnController {
     this.playersNextOrder = [];
     this.round = 1;
     this.orderLocked = false;
+    this.enabled = true;
 
     this.addPlayerButton = this.findElement('addPlayerButton');
     this.turnOrderList = this.findElement('turnOrderList');
@@ -42,16 +43,19 @@ export class TurnController {
 
   bindEvents() {
     this.addPlayerButton?.addEventListener('click', () => {
+      if (!this.enabled) return;
       this.addPlayer();
       this.renderPlayerList();
     });
 
     this.root.querySelector('#endRoundButton')?.addEventListener('click', () => {
+      if (!this.enabled) return;
       this.nextTurn();
       this.renderPlayerList();
     });
 
     this.root.querySelector('#lockOrderButton')?.addEventListener('click', () => {
+      if (!this.enabled) return;
       this.orderLocked = !this.orderLocked;
       this.renderPlayerList();
     });
@@ -65,6 +69,7 @@ export class TurnController {
   }
 
   handleSequenceClick(event) {
+    if (!this.enabled) return;
     const actionButton = event.target.closest('button[data-action]');
     if (!actionButton) return;
 
@@ -72,6 +77,7 @@ export class TurnController {
   }
 
   handleListClick(event) {
+    if (!this.enabled) return;
     const button = event.target.closest('button[data-player-id]');
     if (!button) return;
 
@@ -107,6 +113,7 @@ export class TurnController {
   }
 
   handleListChange(event) {
+    if (!this.enabled) return;
     const field = event.target;
     const player = this.findPlayer(field.dataset.playerId);
     if (!player) return;
@@ -122,7 +129,7 @@ export class TurnController {
 
   handleDragStart(event) {
     const item = event.target.closest('[data-player-id]');
-    if (!item || this.orderLocked) {
+    if (!this.enabled || !item || this.orderLocked) {
       event.preventDefault();
       return;
     }
@@ -131,7 +138,7 @@ export class TurnController {
   }
 
   handleDragOver(event) {
-    if (!this.orderLocked && event.target.closest('[data-player-id]')) {
+    if (this.enabled && !this.orderLocked && event.target.closest('[data-player-id]')) {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
     }
@@ -139,7 +146,7 @@ export class TurnController {
 
   handleDrop(event) {
     event.preventDefault();
-    if (this.orderLocked) return;
+    if (!this.enabled || this.orderLocked) return;
     const sourceId = event.dataTransfer.getData('text/plain');
     const target = event.target.closest('[data-player-id]');
     if (!sourceId || !target || sourceId === target.dataset.playerId) return;
@@ -157,6 +164,12 @@ export class TurnController {
 
   countplayer() {
     return this.players.length;
+  }
+
+  setEnabled(enabled) {
+    this.enabled = Boolean(enabled);
+    this.root.classList.toggle('turn-controller--disabled', !this.enabled);
+    this.root.setAttribute('aria-disabled', String(!this.enabled));
   }
 
   addPlayer(name = 'Jogador ') {

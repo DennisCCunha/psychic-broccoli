@@ -11,3 +11,6 @@ export { default as WebRTCChannel, createWebRTCChannel } from './webrtc-channel.
 export { default as MqttSignalingChannel } from './mqtt-signaling.js';
 export { default as MusicPlayerAdapter } from './music-player-adapter.js';
 export { default as MusicSyncController } from './music-sync-controller.js';
+export { DrawingBoardUI } from './ui/drawing-ui.js';
+export { TextChatUI } from './ui/text-chat-ui.js';
+export { VoiceChatUI } from './ui/voice-chat-ui.js';
