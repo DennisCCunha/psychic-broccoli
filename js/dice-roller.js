@@ -1,9 +1,6 @@
-
-
 import Parser from "https://esm.sh/@3d-dice/dice-roller-parser@0.2.6?target=es2022";
 import DiceBox from "https://cdn.jsdelivr.net/npm/@3d-dice/dice-box@1.1.4/dist/dice-box.es.min.js";
 import BoxControls from "https://esm.sh/@3d-dice/dice-ui@0.5.2/src/boxControls/boxControls.js";
-
 
 class DiceRollerWrapper {
   constructor() {
@@ -12,7 +9,6 @@ class DiceRollerWrapper {
       container: "#diceRollerContainer", 
       id: "diceCanvas",
       assetPath: "assets/",
-      // origin: "https://unpkg.com/@3d-dice/dice-box@1.1.4/dist/",
       origin: "https://cdn.jsdelivr.net/npm/@3d-dice/dice-box@1.1.4/dist/",
 
       offscreen: !0,
@@ -84,10 +80,7 @@ class RollerMessager {
     this.timestamp = 1787400000000;
   }
 
-
-
 }
-
 
 class RollParser {
   constructor() {
@@ -98,10 +91,6 @@ class RollParser {
     let roll = this.parser.parse(diceNotation);
     return roll;
   }
-
-
 }
-
-
 
 export default DiceRollerWrapper;
