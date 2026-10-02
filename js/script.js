@@ -1,4 +1,3 @@
-
 import DiceRollerWrapper from '/js/dice-roller.js';
 import { TurnController } from '/turn-control/turnController.js';
 import { RoomSession } from '/js/room-session.js';
@@ -53,15 +52,16 @@ class PsychicBroccoli {
     this.peerList = document.getElementById('peerList');
     this.voiceChatPanel = document.getElementById('voiceChatPanel');
     this.textChatPanel = document.getElementById('textChatPanel');
-    this.drawingBoardPanel = document.getElementById('drawingBoardPanel');
+
     this.commsSidebar = document.getElementById('commsSidebar');
     this.commsToggleBtn = document.getElementById('commsToggleBtn');
     this.navRoomCode = document.getElementById('navRoomCode');
 
+    this.drawingBoardPanel = document.getElementById('drawingBoardPanel');
 
     this.turnTracker = document.createElement('div');
     this.turnTracker.classList.add('turn-tracker');
-    this.turnTracker.appendChild(this.turncontroller.renderTurnTracker());
+    this.turnTracker.appendChild(this.turncontroller.turnTrackerRender());
     document.getElementById('stage').appendChild(this.turnTracker);
 
     this.connectionCodeInput.value = this.roomCodeStore.getOrCreate();
@@ -73,6 +73,8 @@ class PsychicBroccoli {
     this.createConnectionButton.addEventListener('click', this.onCreateRoomClick.bind(this));
     this.joinConnectionButton.addEventListener('click', this.onJoinRoomClick.bind(this));
     this.sendTestMessageButton.addEventListener('click', this.onSendTestMessageClick.bind(this));
+    this.sharedCode = document.getElementById('navRoomShare');
+    this.sharedCode.addEventListener('click', this.onShareRoomCodeClick.bind(this));
 
     this.setStatus('Ready for a shared WebRTC room.');
     this.renderPeers();
@@ -118,6 +120,20 @@ class PsychicBroccoli {
       payload: { message: 'Shared WebRTC connection active.' }
     });
     this.setStatus('Test message sent.');
+  }
+
+  async onShareRoomCodeClick() {
+    const shareData = {
+      title: 'Join me in my Psychic Broccoli room',
+      text: `Join my Psychic Broccoli room with code: ${this.navRoomCode.textContent}`,
+      url: window.location.href?`?room=${this.navRoomCode.textContent}`: window.location.href
+    };
+    try {
+      await navigator.share(shareData);
+      this.setStatus('Room code shared successfully.');
+    } catch (err) {
+      this.setStatus(`Error sharing room code: ${err}`);
+    }
   }
 
   setStatus(text) {

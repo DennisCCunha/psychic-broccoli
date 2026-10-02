@@ -4,6 +4,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Psychic Broccoli</title>
+        
         <link rel="stylesheet" href="/css/styles.css">
         <link rel="icon" href="/assets/favicon.png" type="image/x-icon">
     </head>
@@ -11,13 +12,17 @@
         <header>
             <nav>
                 <img src="/assets/logo.png" alt="Logo do Psychic Broccoli" class="logo">
-                <ul>
-                    <li><a href="#">Controle de Turno</a></li>
-                    <li><a href="#">Rolador de Dados</a></li>
-                    <li><a href="#">Contato</a></li>
-                </ul>
-                <button id="navRoomCode" class="nav-room-code" type="button" title="Click to copy the shared room code"></button>
-                <button id="commsToggleBtn" class="comms-toggle-btn" type="button" aria-expanded="false" aria-controls="commsSidebar">Connect</button>
+                <div id="gameActions"class="nav-actions">
+                    <button id="gameActionBtn" class="game-action-btn" type="button">Game Action</button>
+                    <button id="gameActionBtn2" class="game-action-btn" type="button">Another Action</button>
+                    <button id="gameActionBtn3" class="game-action-btn" type="button">Yet Another Action</button>
+                </div>
+                <div id="commsActions" class="nav-actions">
+                    <button id="commsConnectBtn" class="comms-toggle-btn" type="button" title="Click to connect to the room"><i class="connect-icon"></i>Criar Sala</button>
+                    <button id="navRoomCode" class="nav-room-code" type="button" title="Click to copy the shared room code"></button>
+                    <button id="navRoomShare" class="nav-room-code" type="button" title="Click to share the room code"><i class="share-icon"></i></button>
+                    <button id="commsToggleBtn" class="comms-toggle-btn" type="button" aria-expanded="false" aria-controls="commsSidebar"><i class="config-icon"></i>Config</button>
+                </div>
             </nav>
         </header>
 
