@@ -1,5 +1,3 @@
-import { TextChat } from '/js/text-chat.js';
-
 export class TextChatUI {
   constructor(textChat) {
     this._chat = textChat;
@@ -18,7 +16,7 @@ export class TextChatUI {
         <div class="text-chat-messages"></div>
         <div class="text-chat-input-row">
           <input type="text" class="text-chat-input" placeholder="Type a message…" maxlength="500" />
-          <button type="button" class="text-chat-send-btn">Send</button>
+          <button type="button" class="text-chat-send-btn"><i class="bi bi-send"></i></button>
         </div>
       </div>
     `;

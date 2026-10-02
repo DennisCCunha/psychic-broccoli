@@ -1,11 +1,7 @@
-
-
 const DEFAULT_ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' }
 ];
-
-
 
 export class PeerConnectionManager {
   constructor({
@@ -39,6 +35,9 @@ export class PeerConnectionManager {
     this.onError = onError;
     this.localTracks = [];
     this.connections = new Map();
+    // A autoridade fica vinculada ao peer autenticado pelo handshake, não ao
+    // campo `role`, que pode ser alterado pelo código executado no navegador.
+    this.authorityPeerId = role === 'host' ? this.peerId : null;
     this.peers = new Map([[this.peerId, this.createPeer(this.peerId, this.identityLabel, true)]]);
     this.pendingMessages = [];
     this.signalChannelName = `psychic-b-${this.sharedCode}`;
@@ -71,10 +70,7 @@ export class PeerConnectionManager {
 
     if (!signalingTransportFactory && typeof window !== 'undefined' && 'addEventListener' in window) {
       this.storageListener = (event) => {
-        if (!event.key || !event.key.startsWith(this.signalChannelName) || !event.newValue) {
-          return;
-        }
-
+        if (!event.key || !event.key.startsWith(this.signalChannelName) || !event.newValue) return;
         this.handleSignal(this.parseSignalPayload(event.newValue));
       };
       window.addEventListener('storage', this.storageListener);
@@ -85,7 +81,6 @@ export class PeerConnectionManager {
     if (typeof globalThis.crypto !== 'undefined' && globalThis.crypto.randomUUID) {
       return globalThis.crypto.randomUUID();
     }
-
     return `peer-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 
@@ -99,12 +94,7 @@ export class PeerConnectionManager {
   }
 
   createPeer(peerId, label, connected = false) {
-    return {
-      peerId,
-      label,
-      connected,
-      connectionState: connected ? 'connected' : 'new'
-    };
+    return { peerId, label, connected, connectionState: connected ? 'connected' : 'new' };
   }
 
   getPeers() {
@@ -124,19 +114,11 @@ export class PeerConnectionManager {
   }
 
   sendSignal(type, payload = {}, to = null) {
-    const message = {
-      type,
-      roomCode: this.sharedCode,
-      from: this.peerId,
-      to,
-      payload
-    };
-
+    const message = { type, roomCode: this.sharedCode, from: this.peerId, to, payload };
     if (this.signalChannel) {
       this.signalChannel.postMessage(message);
       return;
     }
-
     const storageKey = `${this.signalChannelName}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     localStorage.setItem(storageKey, JSON.stringify(message));
   }
@@ -160,55 +142,32 @@ export class PeerConnectionManager {
 
   createConnection(peerId, label = 'Player') {
     const existing = this.connections.get(peerId);
-    if (existing) {
-      return existing.peerConnection;
-    }
+    if (existing) return existing.peerConnection;
 
     const peerConnection = new RTCPeerConnection({ iceServers: this.iceServers });
-    const connection = {
-      peerConnection,
-      dataChannel: null,
-      pendingIceCandidates: [],
-      label
-    };
+    const connection = { peerConnection, dataChannel: null, pendingIceCandidates: [], label };
     this.connections.set(peerId, connection);
     this.peers.set(peerId, this.createPeer(peerId, label));
 
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
-        this.sendSignal('ice-candidate', {
-          candidate: this.toCloneableCandidate(event.candidate)
-        }, peerId);
+        this.sendSignal('ice-candidate', { candidate: this.toCloneableCandidate(event.candidate) }, peerId);
       }
     };
-
     peerConnection.onconnectionstatechange = () => {
       const connected = peerConnection.connectionState === 'connected';
-      this.updatePeer(peerId, {
-        connected,
-        connectionState: peerConnection.connectionState
-      });
+      this.updatePeer(peerId, { connected, connectionState: peerConnection.connectionState });
       this.updateState({
         connectionState: this.role === 'host' ? (connected ? 'connected' : peerConnection.connectionState) : peerConnection.connectionState,
         connected: this.hasConnectedPeer()
       });
-
       if (connected) {
-        this.onPeerConnected({
-          sharedCode: this.sharedCode,
-          peerId,
-          userName: this.peers.get(peerId)?.label
-        });
+        this.onPeerConnected({ sharedCode: this.sharedCode, peerId, userName: this.peers.get(peerId)?.label });
         this.sendRoster();
       }
     };
-
-    peerConnection.ondatachannel = (event) => {
-      this.attachDataChannel(peerId, event.channel);
-    };
-
+    peerConnection.ondatachannel = (event) => this.attachDataChannel(peerId, event.channel);
     peerConnection.ontrack = (event) => this.onTrack(event, peerId);
-
     peerConnection.onnegotiationneeded = async () => {
       if (this.role === 'host' && peerConnection.connectionState === 'connected') {
         try {
@@ -218,25 +177,19 @@ export class PeerConnectionManager {
         }
       }
     };
-
-    for (const { track, stream } of this.localTracks) {
-      peerConnection.addTrack(track, stream);
-    }
-
+    for (const { track, stream } of this.localTracks) peerConnection.addTrack(track, stream);
     return peerConnection;
   }
 
   addLocalTrack(track, stream) {
     this.localTracks.push({ track, stream });
-    for (const connection of this.connections.values()) {
-      connection.peerConnection.addTrack(track, stream);
-    }
+    for (const connection of this.connections.values()) connection.peerConnection.addTrack(track, stream);
   }
 
   removeLocalTrack(track) {
-    this.localTracks = this.localTracks.filter((t) => t.track !== track);
+    this.localTracks = this.localTracks.filter((item) => item.track !== track);
     for (const connection of this.connections.values()) {
-      const sender = connection.peerConnection.getSenders().find((s) => s.track === track);
+      const sender = connection.peerConnection.getSenders().find((item) => item.track === track);
       if (sender) connection.peerConnection.removeTrack(sender);
     }
   }
@@ -247,69 +200,60 @@ export class PeerConnectionManager {
 
   attachDataChannel(peerId, channel) {
     const connection = this.connections.get(peerId);
-    if (!connection || !channel) {
-      return;
-    }
-
+    if (!connection || !channel) return;
     connection.dataChannel = channel;
     this.state.dataChannel = channel;
     this.state.remotePeerId = peerId;
-
     channel.onopen = () => {
       this.updatePeer(peerId, { connected: true, connectionState: 'connected' });
-      this.updateState({
-        connectionState: 'connected',
-        connected: this.hasConnectedPeer(),
-        dataChannel: channel,
-        peerConnection: connection.peerConnection,
-        remotePeerId: peerId
-      });
-      this.sendSignal('identity', { label: this.identityLabel }, peerId);
+      this.updateState({ connectionState: 'connected', connected: this.hasConnectedPeer(), dataChannel: channel, peerConnection: connection.peerConnection, remotePeerId: peerId });
+      // A identidade segue pelo DataChannel já negociado. Assim, o receptor
+      // associa autoridade ao peer WebRTC real, e não a um `role` anunciado.
+      channel.send(JSON.stringify({
+        type: 'identity',
+        label: this.identityLabel,
+        role: this.role === 'host' ? 'host' : 'guest'
+      }));
       this.flushPendingMessages();
       this.sendRoster();
-      this.onPeerConnected({
-        sharedCode: this.sharedCode,
-        peerId,
-        userName: this.peers.get(peerId)?.label
-      });
+      this.onPeerConnected({ sharedCode: this.sharedCode, peerId, userName: this.peers.get(peerId)?.label });
     };
-
     channel.onclose = () => {
       this.updatePeer(peerId, { connected: false, connectionState: 'closed' });
       this.updateState({ connected: this.hasConnectedPeer(), connectionState: 'closed' });
       this.sendRoster();
     };
-
     channel.onerror = (error) => this.onError(error);
     channel.onmessage = (event) => this.handleData(peerId, event);
   }
 
   handleData(peerId, event) {
     const payload = typeof event.data === 'string' ? this.parseSignalPayload(event.data) : event.data;
-
     if (payload?.type === 'roster') {
       this.applyRoster(payload.peers);
       return;
     }
-
     if (payload?.type === 'identity') {
       this.updatePeer(peerId, { label: payload.label || 'Player' });
       this.sendRoster();
       return;
     }
-
-    if (this.role === 'host') {
-      this.broadcastData(payload, peerId);
-    }
-
+    // Comandos administrativos só podem vir do peer definido pelo handshake.
+    // Isso bloqueia a elevação local de `role` feita pelo console do navegador.
+    if (this.requiresAuthority(payload) && peerId !== this.authorityPeerId) return;
+    if (this.role === 'host') this.broadcastData(payload, peerId);
     this.onMessage(payload, { sharedCode: this.sharedCode, peerId });
+  }
+
+  requiresAuthority(payload) {
+    if (!payload || typeof payload !== 'object') return false;
+    if (payload.type === 'music-sync') return true;
+    return payload.type === 'draw' && ['clear', 'lock'].includes(payload.op);
   }
 
   applyRoster(roster = []) {
     for (const peer of roster) {
-      if (peer.peerId !== this.peerId) {
-        this.peers.set(peer.peerId, { ...peer });
-      }
+      if (peer.peerId !== this.peerId) this.peers.set(peer.peerId, { ...peer });
     }
     this.updateState();
   }
@@ -317,9 +261,7 @@ export class PeerConnectionManager {
   broadcastData(payload, exceptPeerId = null) {
     const serialized = typeof payload === 'string' ? payload : JSON.stringify(payload);
     for (const [peerId, connection] of this.connections) {
-      if (peerId !== exceptPeerId && connection.dataChannel?.readyState === 'open') {
-        connection.dataChannel.send(serialized);
-      }
+      if (peerId !== exceptPeerId && connection.dataChannel?.readyState === 'open') connection.dataChannel.send(serialized);
     }
   }
 
@@ -329,36 +271,21 @@ export class PeerConnectionManager {
 
   async sendOffer(peerId) {
     const peerConnection = this.getConnection(peerId);
-    if (!peerConnection) {
-      return;
-    }
-
+    if (!peerConnection) return;
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
-    this.sendSignal('offer', {
-      offer: this.toCloneableDescription(peerConnection.localDescription)
-    }, peerId);
+    this.sendSignal('offer', { offer: this.toCloneableDescription(peerConnection.localDescription) }, peerId);
   }
 
   async flushPendingIceCandidates(peerId) {
     const connection = this.connections.get(peerId);
-    if (!connection) {
-      return;
-    }
-
-    while (connection.pendingIceCandidates.length) {
-      await connection.peerConnection.addIceCandidate(connection.pendingIceCandidates.shift());
-    }
+    if (!connection) return;
+    while (connection.pendingIceCandidates.length) await connection.peerConnection.addIceCandidate(connection.pendingIceCandidates.shift());
   }
 
   async handleSignal(message) {
-    if (!message || message.roomCode !== this.sharedCode || message.from === this.peerId) {
-      return;
-    }
-    if (message.to && message.to !== this.peerId) {
-      return;
-    }
-
+    if (!message || message.roomCode !== this.sharedCode || message.from === this.peerId) return;
+    if (message.to && message.to !== this.peerId) return;
     try {
       if (message.type === 'ready' && this.role === 'host') {
         const label = message.payload?.label || 'Player';
@@ -369,42 +296,33 @@ export class PeerConnectionManager {
         await this.sendOffer(message.from);
         return;
       }
-
       if (message.type === 'offer' && this.role !== 'host') {
+        // O peer que enviou a oferta é a autoridade desta conexão. Esse
+        // vínculo permanece mesmo se `this.role` for adulterado localmente.
+        if (!this.authorityPeerId) this.authorityPeerId = message.from;
         const peerConnection = this.createConnection(message.from, 'Host');
         await peerConnection.setRemoteDescription(new RTCSessionDescription(message.payload.offer));
         await this.flushPendingIceCandidates(message.from);
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
-        this.sendSignal('answer', {
-          answer: this.toCloneableDescription(peerConnection.localDescription)
-        }, message.from);
+        this.sendSignal('answer', { answer: this.toCloneableDescription(peerConnection.localDescription) }, message.from);
         this.updateState({ connectionState: 'connecting', peerConnection });
         return;
       }
-
       if (message.type === 'answer') {
         const peerConnection = this.getConnection(message.from);
-        if (!peerConnection) {
-          return;
-        }
+        if (!peerConnection) return;
         await peerConnection.setRemoteDescription(new RTCSessionDescription(message.payload.answer));
         await this.flushPendingIceCandidates(message.from);
         return;
       }
-
       if (message.type === 'ice-candidate' && message.payload.candidate) {
         const peerConnection = this.getConnection(message.from);
-        if (!peerConnection) {
-          return;
-        }
+        if (!peerConnection) return;
         const candidate = new RTCIceCandidate(message.payload.candidate);
         const connection = this.connections.get(message.from);
-        if (peerConnection.remoteDescription) {
-          await peerConnection.addIceCandidate(candidate);
-        } else {
-          connection.pendingIceCandidates.push(candidate);
-        }
+        if (peerConnection.remoteDescription) await peerConnection.addIceCandidate(candidate);
+        else connection.pendingIceCandidates.push(candidate);
       }
     } catch (error) {
       this.onError(error);
@@ -416,35 +334,26 @@ export class PeerConnectionManager {
       this.updateState({ connectionState: 'waiting', connected: false });
       return;
     }
-
     this.sendSignal('ready', { label: this.identityLabel });
     this.updateState({ connectionState: 'waiting', connected: false });
   }
 
   flushPendingMessages() {
-    if (!this.state.dataChannel || this.state.dataChannel.readyState !== 'open') {
-      return;
-    }
-
-    while (this.pendingMessages.length) {
-      this.state.dataChannel.send(this.pendingMessages.shift());
-    }
+    if (!this.state.dataChannel || this.state.dataChannel.readyState !== 'open') return;
+    while (this.pendingMessages.length) this.state.dataChannel.send(this.pendingMessages.shift());
   }
 
   sendMessage(message) {
     const payload = typeof message === 'string' ? message : JSON.stringify(message);
-
     if (this.role === 'host') {
       this.broadcastData(payload);
       return this.hasConnectedPeer();
     }
-
     const connection = [...this.connections.values()][0];
     if (connection?.dataChannel?.readyState === 'open') {
       connection.dataChannel.send(payload);
       return true;
     }
-
     this.pendingMessages.push(payload);
     return false;
   }
@@ -457,25 +366,13 @@ export class PeerConnectionManager {
     this.connections.clear();
     this.peers = new Map([[this.peerId, this.createPeer(this.peerId, this.identityLabel, true)]]);
     this.signalChannel?.close();
-    if (this.storageListener && typeof window !== 'undefined') {
-      window.removeEventListener('storage', this.storageListener);
-    }
-    this.updateState({
-      connectionState: 'closed',
-      connected: false,
-      peerConnection: null,
-      dataChannel: null,
-      remotePeerId: null
-    });
+    if (this.storageListener && typeof window !== 'undefined') window.removeEventListener('storage', this.storageListener);
+    this.updateState({ connectionState: 'closed', connected: false, peerConnection: null, dataChannel: null, remotePeerId: null });
   }
 
-  get peerConnection() {
-    return this.state.peerConnection;
-  }
+  get peerConnection() { return this.state.peerConnection; }
 
-  get dataChannel() {
-    return this.state.dataChannel;
-  }
+  get dataChannel() { return this.state.dataChannel; }
 }
 
 export function createConnectionAPI(options) {
@@ -483,3 +380,4 @@ export function createConnectionAPI(options) {
 }
 
 export const createPeerConnectionApi = createConnectionAPI;
+export default PeerConnectionManager;

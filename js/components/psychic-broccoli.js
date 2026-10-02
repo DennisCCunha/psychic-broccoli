@@ -1,33 +1,8 @@
-<<<<<<< HEAD
 import DiceRollerWrapper from '/js/dice-roller.js';
-import { TurnController } from '/turn-control/turnController.js';
-import { RoomSession } from '/js/room-session.js';
+import { RoomSession } from './room-session/index.js';
+import { RoomCodeStore } from './room-code-store.js';
 
-const ROOM_CODE_STORAGE_KEY = 'psychic-b-room-code';
-
-class RoomCodeStore {
-  read() {
-    return localStorage.getItem(ROOM_CODE_STORAGE_KEY);
-  }
-
-  write(code) {
-    localStorage.setItem(ROOM_CODE_STORAGE_KEY, code);
-  }
-
-  generate() {
-    return Math.random().toString(36).slice(2, 8).toUpperCase();
-  }
-
-  getOrCreate() {
-    const saved = this.read();
-    if (saved) return saved;
-    const code = this.generate();
-    this.write(code);
-    return code;
-  }
-}
-
-class PsychicBroccoli {
+export class PsychicBroccoli {
   constructor() {
     this.roomCodeStore = new RoomCodeStore();
     this.session = null;
@@ -41,7 +16,8 @@ class PsychicBroccoli {
 
   async onDomReady() {
     this.contentContainer = document.getElementById('contentContainer');
-    this.turncontroller = await this.loadTurnController();
+    this.turncontroller = document.querySelector('turn-controller')?.controller;
+    this.turnTrackerToggle = document.getElementById('turnTrackerToggle');
     this.diceRoller = await this.loadDiceRoller();
 
     this.connectionCodeInput = document.getElementById('connectionCodeInput');
@@ -53,17 +29,10 @@ class PsychicBroccoli {
     this.peerList = document.getElementById('peerList');
     this.voiceChatPanel = document.getElementById('voiceChatPanel');
     this.textChatPanel = document.getElementById('textChatPanel');
-
+    this.drawingBoardPanel = document.getElementById('drawingBoardPanel');
     this.commsSidebar = document.getElementById('commsSidebar');
     this.commsToggleBtn = document.getElementById('commsToggleBtn');
     this.navRoomCode = document.getElementById('navRoomCode');
-
-    this.drawingBoardPanel = document.getElementById('drawingBoardPanel');
-
-    this.turnTracker = document.createElement('div');
-    this.turnTracker.classList.add('turn-tracker');
-    this.turnTracker.appendChild(this.turncontroller.turnTrackerRender());
-    document.getElementById('stage').appendChild(this.turnTracker);
 
     this.connectionCodeInput.value = this.roomCodeStore.getOrCreate();
     this.navRoomCode.textContent = this.connectionCodeInput.value;
@@ -71,18 +40,23 @@ class PsychicBroccoli {
     this.connectionCodeInput.addEventListener('change', this.onRoomCodeChange.bind(this));
     this.navRoomCode.addEventListener('click', this.onNavRoomCodeClick.bind(this));
     this.commsToggleBtn.addEventListener('click', this.onCommsToggleClick.bind(this));
+    this.turnTrackerToggle?.addEventListener('click', this.onTurnTrackerToggleClick.bind(this));
     this.createConnectionButton.addEventListener('click', this.onCreateRoomClick.bind(this));
     this.joinConnectionButton.addEventListener('click', this.onJoinRoomClick.bind(this));
     this.sendTestMessageButton.addEventListener('click', this.onSendTestMessageClick.bind(this));
-    this.sharedCode = document.getElementById('navRoomShare');
-    this.sharedCode.addEventListener('click', this.onShareRoomCodeClick.bind(this));
 
     this.setStatus('Ready for a shared WebRTC room.');
+    this.setTurnTrackerEnabled(false);
     this.renderPeers();
   }
 
-  initTurnTracker(players) {
-    this.turnTracker.turnTrackerRender();
+  setTurnTrackerEnabled(enabled) {
+    this.turncontroller?.setEnabled(enabled);
+    this.turnTrackerToggle?.setAttribute('aria-pressed', String(enabled));
+  }
+
+  onTurnTrackerToggleClick() {
+    this.setTurnTrackerEnabled(!this.turncontroller?.enabled);
   }
 
   onRoomCodeChange() {
@@ -121,20 +95,6 @@ class PsychicBroccoli {
       payload: { message: 'Shared WebRTC connection active.' }
     });
     this.setStatus('Test message sent.');
-  }
-
-  async onShareRoomCodeClick() {
-    const shareData = {
-      title: 'Join me in my Psychic Broccoli room',
-      text: `Join my Psychic Broccoli room with code: ${this.navRoomCode.textContent}`,
-      url: window.location.href?`?room=${this.navRoomCode.textContent}`: window.location.href
-    };
-    try {
-      await navigator.share(shareData);
-      this.setStatus('Room code shared successfully.');
-    } catch (err) {
-      this.setStatus(`Error sharing room code: ${err}`);
-    }
   }
 
   setStatus(text) {
@@ -192,25 +152,11 @@ class PsychicBroccoli {
     console.error(error);
   }
 
-  async loadTurnController() {
-    const response = await fetch('/turn-control/turnController.html');
-    const html = await response.text();
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    this.contentContainer.appendChild(tempDiv.firstElementChild);
-    return new TurnController();
-  }
-
   async loadDiceRoller() {
     const diceRoller = new DiceRollerWrapper();
     await diceRoller.init();
     return diceRoller;
   }
 }
-=======
 
-import './components/turn-controller/turn-controller-element.js';
-import PsychicBroccoli from '/js/components/psychic-broccoli.js';
->>>>>>> a02868afd400992250140e9bcc3276c7deb1ded8
-
-new PsychicBroccoli();
+export default PsychicBroccoli;
