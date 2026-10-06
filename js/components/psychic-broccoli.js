@@ -24,7 +24,12 @@ export class PsychicBroccoli {
     this.identityLabelInput = document.getElementById('identityLabelInput');
     this.createConnectionButton = document.getElementById('createConnectionBtn');
     this.joinConnectionButton = document.getElementById('joinConnectionBtn');
+    this.shuffleConnectionCodeButton = document.getElementById('shuffleConnectionCodeBtn');
     this.sendTestMessageButton = document.getElementById('sendTestMessageBtn');
+    
+    this.closeConnectionButton = document.getElementById('closeConnectionBtn');
+    this.closeConnectionButton.classList.add('hidden');
+
     this.connectionStatus = document.getElementById('connectionStatus');
     this.peerList = document.getElementById('peerList');
     this.voiceChatPanel = document.getElementById('voiceChatPanel');
@@ -43,7 +48,9 @@ export class PsychicBroccoli {
     this.turnTrackerToggle?.addEventListener('click', this.onTurnTrackerToggleClick.bind(this));
     this.createConnectionButton.addEventListener('click', this.onCreateRoomClick.bind(this));
     this.joinConnectionButton.addEventListener('click', this.onJoinRoomClick.bind(this));
+    this.shuffleConnectionCodeButton.addEventListener('click', this.onShuffleConnectionCodeClick.bind(this));
     this.sendTestMessageButton.addEventListener('click', this.onSendTestMessageClick.bind(this));
+    this.closeConnectionButton.addEventListener('click', this.onCloseConnectionClick.bind(this));
 
     this.setStatus('Ready for a shared WebRTC room.');
     this.setTurnTrackerEnabled(false);
@@ -76,12 +83,21 @@ export class PsychicBroccoli {
     this.commsToggleBtn.setAttribute('aria-expanded', String(!collapsed));
   }
 
+  onShuffleConnectionCodeClick() {
+    const newCode = this.roomCodeStore.generate();
+    this.connectionCodeInput.value = newCode;
+    this.roomCodeStore.write(newCode);
+    this.navRoomCode.textContent = newCode;
+  }
+
   onCreateRoomClick() {
     this.startSession('host');
+    this.closeConnectionButton.classList.remove('hidden');
   }
 
   onJoinRoomClick() {
     this.startSession('guest');
+    this.closeConnectionButton.classList.remove('hidden');
   }
 
   onSendTestMessageClick() {
@@ -95,6 +111,18 @@ export class PsychicBroccoli {
       payload: { message: 'Shared WebRTC connection active.' }
     });
     this.setStatus('Test message sent.');
+  }
+
+  onCloseConnectionClick() {
+    if (!this.session) {
+      this.setStatus('No active connection to close.');
+      return;
+    }
+    this.session.close();
+    this.session = null;
+    this.renderPeers();
+    this.setStatus('Connection closed.');
+    this.closeConnectionButton.classList.add('hidden');
   }
 
   setStatus(text) {
