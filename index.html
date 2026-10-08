@@ -59,7 +59,7 @@
                     <div>
                         <label for="connectionCodeInput">Codigo da Sala</label>
                         <input id="connectionCodeInput" type="text" value="psychic-b" maxlength="24" placeholder="Type a shared room code">
-                        <button id="copyConnectionCodeBtn" type="button" title="Refresh the room code" aria-label="Refresh the room code"><i class="bi bi-shuffle"></i></button>
+                        <button id="shuffleConnectionCodeBtn" type="button" title="Refresh the room code" aria-label="Refresh the room code"><i class="bi bi-shuffle"></i></button>
                     </div>
                     <label for="identityLabelInput">Seu Nome</label>
                     <input id="identityLabelInput" type="text" value="Player 1" maxlength="32" placeholder="Nome mostrado aos outros jogadores">
@@ -67,6 +67,7 @@
                         <button id="createConnectionBtn" type="button">Criar sala</button>
                         <button id="joinConnectionBtn" type="button">Entrar na sala</button>
                         <button id="sendTestMessageBtn" type="button">Enviar teste</button>
+                        <button id="closeConnectionBtn" type="button" class="btn danger">Fechar conexão</button>
                     </div>
                     <p id="connectionStatus">Pronto para uma sala WebRTC compartilhada.</p>
                     <div class="peer-roster" aria-live="polite">

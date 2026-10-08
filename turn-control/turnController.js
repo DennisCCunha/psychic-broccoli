@@ -311,28 +311,100 @@ class TurnControllerElement extends HTMLElement {
     connectedCallback() {
         if (this.controller) return;
 
-        this.innerHTML = `
-            <div id="turnControl">
-                <div id="divcontrol">
-                    <div id="playerControl">
-                        <button id="addPlayerButton" type="button">Adicionar Jogador +</button>
-                        <button id="endRoundButton" type="button">Encerrar rodada</button>
-                        <button id="lockOrderButton" type="button" aria-pressed="false">Travar ordem</button>
-                    </div>
-                    <div class="turn-tracker" aria-label="Sequência da rodada">
-                        <div class="sequence">
-                            <div class="sequence-count"><span id="roundNumber">1</span><small>rodada</small></div>
-                            <div id="turnSequenceTrack" class="sequence-track"></div>
-                        </div>
-                    </div>
-                    <div id="previousTurn"></div>
-                    <div id="currentTurn"></div>
-                </div>
-                <div id="trunOrderContainer">
-                    <span id="turnOrderLabel">Ordem de Turno:</span>
-                    <div id="turnOrderList"></div>
-                </div>
-            </div>`;
+        this.innerHTML = window.createElement("div");
+
+        let turnControl = window.createElement("div");
+        turnControl.id = "turnControl";
+        
+        let divControl = window.createElement("div");
+        divControl.id = "divcontrol";
+
+        let playerControl = window.createElement("div");
+        playerControl.id = "playerControl";
+
+        divControl.appendChild(playerControl);
+        turnControl.appendChild(divControl);
+        
+        let addPlayerButton = window.createElement("button");
+        addPlayerButton.id = "addPlayerButton";
+        addPlayerButton.type = "button";
+        addPlayerButton.textContent = "Adicionar Jogador +";
+        playerControl.appendChild(addPlayerButton);
+
+        let endRoundButton = window.createElement("button");
+        endRoundButton.id = "endRoundButton";
+        endRoundButton.type = "button";
+        endRoundButton.textContent = "Encerrar rodada";
+        playerControl.appendChild(endRoundButton);
+
+        let lockOrderButton = window.createElement("button");
+        lockOrderButton.id = "lockOrderButton";
+        lockOrderButton.type = "button";
+        lockOrderButton.setAttribute("aria-pressed", "false");
+        lockOrderButton.textContent = "Travar ordem";
+        playerControl.appendChild(lockOrderButton);
+
+
+        let turnTracker = window.createElement("div");
+        turnTracker.id = "turnTracker";
+        turnTracker.className = "turn-tracker";
+        turnTracker.setAttribute("aria-label", "Sequência da rodada");
+
+        let sequence = window.createElement("div");
+        sequence.className = "sequence";
+
+        let sequenceCount = window.createElement("div");
+        sequenceCount.className = "sequence-count";
+        sequenceCount.innerHTML = `<span id="roundNumber">1</span><small>rodada</small>`;
+
+        let turnSequenceTrack = window.createElement("div");
+        turnSequenceTrack.id = "turnSequenceTrack";
+        turnSequenceTrack.className = "sequence-track";
+
+        sequence.appendChild(sequenceCount);
+        sequence.appendChild(turnSequenceTrack);
+        turnTracker.appendChild(sequence);
+        divControl.appendChild(turnTracker);
+
+        let turnOrderContainer = window.createElement("div");
+        turnOrderContainer.id = "turnOrderContainer";
+
+        let turnOrderLabel = window.createElement("span");
+        turnOrderLabel.id = "turnOrderLabel";
+        turnOrderLabel.textContent = "Ordem de Turno:";
+        turnOrderContainer.appendChild(turnOrderLabel);
+
+        let turnOrderList = window.createElement("div");
+        turnOrderList.id = "turnOrderList";
+        turnOrderContainer.appendChild(turnOrderList);
+
+        divControl.appendChild(turnOrderContainer);
+
+
+        this.innerHTML.appendChild(divControl);
+
+        // this.innerHTML = `
+        //     <div id="turnControl">
+        //         <div id="divcontrol">
+        //             <div id="playerControl">
+        //                 <button id="addPlayerButton" type="button">Adicionar Jogador +</button>
+        //                 <button id="endRoundButton" type="button">Encerrar rodada</button>
+        //                 <button id="lockOrderButton" type="button" aria-pressed="false">Travar ordem</button>
+        //             </div>
+        //             <div class="turn-tracker" aria-label="Sequência da rodada">
+        //                 <div class="sequence">
+        //                     <div class="sequence-count"><span id="roundNumber">1</span><small>rodada</small></div>
+        //                     <div id="turnSequenceTrack" class="sequence-track"></div>
+        //                 </div>
+        //             </div>
+        //             <div id="previousTurn"></div>
+        //             <div id="currentTurn"></div>
+        //         </div>
+        //         <div id="turnOrderContainer">
+        //             <span id="turnOrderLabel">Ordem de Turno:</span>
+        //             <div id="turnOrderList"></div>
+        //         </div>
+        //     </div>`;
 
         this.controller = new TurnController(this);
         this.controller.renderPlayerList();
